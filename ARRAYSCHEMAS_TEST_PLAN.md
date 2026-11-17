@@ -231,3 +231,68 @@ Location: `protostuff-json/src/test/java/io/protostuff/` (the JSON module alread
 2. **Baseline JDK:** add `--add-opens` to surefire (keeps JDK 17/21), or standardize the baseline on JDK 8 to match the project's `javac.target` of 1.6?
 3. **T6 scope:** JSON only (recommended), or also XML and YAML?
 4. **Golden fixtures:** stored as hex files in `src/test/resources` (recommended, easy to diff), or inlined as string constants in the test class?
+
+**Decided:** 1) keep as-is, 2) `--add-opens` in `protostuff-runtime/pom.xml`, 3) JSON only, 4) hex files in `src/test/resources`.
+
+---
+
+## 6. Implementation status (branch `arrayschemas-tests`)
+
+Steps 0–3 of §4.5 are done. Steps 4–7 (JMH baseline, the refactor itself, API check, NP-1 decision) are not started. No production code was changed.
+
+### What was added
+
+| Plan item | File(s) | Tests |
+|---|---|---|
+| Step 0 baseline | `protostuff-runtime/pom.xml`: surefire `argLine` = `@{argLine} --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED`, plus an empty `argLine` property so the build works with and without JaCoCo | runtime: 189 → **0 errors** (was 15) |
+| T7 | `NullArrayElementTest.java`: `equals()` of the 4 list/map pojos compares every element (`deepEqualsAll`); each test adds a second, different element. New `GraphNullArrayElementTest` and `GraphNullArrayElementInObjectArrayTest` | +16 |
+| Shared fixtures | `ArrayTestSupport.java`: 23 element kinds (16 types, with primitive/boxed variants), 6 shapes, 6 entry paths (A, B, C, C_COLLECTION, D, D_KEY), 3 binary formats, deep equality, pipe check, raw schema I/O | – |
+| T1 | `ArraySchemasGoldenBytesTest.java` + `src/test/resources/io/protostuff/runtime/array-golden/path-*.txt` (6 files, about 2,100 cases, about 340 KB). Each line pins **bytes and decode outcome** | 7 |
+| T2 | `ArraySchemasCorruptInputTest.java` (CI-1…CI-9 and the G9 pipe case) | 12 |
+| T3 | `ArraySchemasGraphTest.java` (GR-1…GR-5) | 6 |
+| T4 | `ArraySchemasNullPolicyTest.java` (NP-1…NP-3) | 4 |
+| T5 | `ArraySchemasEntryPathTest.java` (EP-1…EP-10, TF-4); functional matrix of about 1,900 round trips plus pipe | 9 |
+| T6 | `protostuff-json/.../ArraySchemasJsonTest.java` (TF-1…TF-3) | 4 |
+
+Deviation from §4.3: the golden data is one file per entry path with `key=hex|outcome` lines, not one file per case, which keeps the number of files manageable. In regeneration mode (`-Dprotostuff.golden.regen=true`) the files are rewritten; otherwise they are only compared.
+
+### Results (JDK 21, Maven 3.10)
+
+| Module | Result |
+|---|---|
+| `protostuff-runtime` | **243 run, 0 failures, 0 errors** (189 existing + 54 new) |
+| `protostuff-json` | `ArraySchemasJsonTest` 4/4 pass. 20 errors in **existing** `*RuntimeObjectSchemaTest` classes: the same missing `--add-opens` (this module's surefire has no `argLine`) |
+| `protostuff-runtime-md` (reflection-only build; runs a copy of the runtime tests) | **All new tests pass, including the golden bytes.** The reflection build writes identical data. 14 errors in existing tests (same `--add-opens` issue). See the build note below |
+| JaCoCo, `ArraySchemas*` + `IdStrategy` derived array subclasses | **100% lines (1059/1059), 100% branches (611/611)**, up from about 85% lines and about 70% branches. This exceeds the §4.4 gate of 95% / 90% |
+
+### Behavior pinned as CHARACTERIZATION (candidate bugs for the team to review)
+
+1. **Enum arrays in collections and maps cannot be deserialized (NPE).** `EnumIO` builds its `genericElementSchema` with a `null` handler (`EnumIO.java:212`), where `HasSchema` and `HasDelegate` pass `ArraySchemas.GENERIC_HANDLER`. `List<MyEnum[]>`, `Map<K, MyEnum[]>` and `Map<MyEnum[], V>` serialize fine but throw a `NullPointerException` on read, in every format including JSON. Pinned in `ArrayTestSupport.hitsEnumNullHandler`. The likely fix is one line, but it changes behavior, so it belongs in its own commit.
+2. **NP-1 (confirmed on every path and format):** with `PRESERVE_NULL_ELEMENTS` off, a boxed array containing nulls serializes but fails to read with "Corrupt input.".
+3. **`Byte[]` is unsupported.** A class with a `Byte[]` field can't get a schema, and a `Byte[]` inside an `Object` field fails to serialize (both with `RuntimeException("Should not happen.")`, because `ArraySchemas` has no `ID_BYTE` case).
+4. **Malformed input is not always rejected cleanly:**
+   - a null count that overshoots the length is silently accepted
+   - a null count ≥ 2³¹ followed by an element causes an `ArrayIndexOutOfBoundsException`
+   - a negative length causes a `NegativeArraySizeException`
+   - on the pipe, a length of `-1` is accepted as an empty array for every kind
+5. **JSON emits duplicate keys** for boxed arrays with an inner null run, e.g. `{"a":4,"b":[1],"c":2,"b":[4]}`. protostuff reads it back, but generic JSON parsers may not.
+6. **Path C encoding depends on `PRESERVE_NULL_ELEMENTS` even without nulls.** `List<X[]>` is routed through the collection schema when the flag is on. This comes from `RuntimeRepeatedFieldFactory`, not `ArraySchemas`.
+7. *(Outside `ArraySchemas` scope, noted only.)* `GraphIOUtil` does not resolve back-references to the **top-level** message passed to `mergeFrom`. `ArraySchemasGraphTest` nests its tree in a holder for that reason.
+
+### Build environment notes (pre-existing, not changed)
+
+- **The root `javac.target` of 1.6 can't compile on JDK 9+.** Every Maven command needs `-Djavac.target=1.8` (and `-Dmaven.javadoc.skip=true` for `package`/`verify`). This is refactoring opportunity #13.
+- **`protostuff-runtime-md` doesn't build on Maven 3.10.** Its antrun configuration uses `<tasks>`, which antrun 3.x removed, and the plugin version isn't pinned. Verification ran on a scratch copy with antrun pinned to 1.8; the repo pom is unchanged.
+- **`protostuff-json` needs one online build.** Its unpinned surefire resolves to 3.6.0, which downloads `surefire-junit-platform` once.
+- **VS Code races Maven for `target/`.** The VS Code Java extension rebuilds into the same `target/classes` and wiped it mid-run after the pom change. For reliable results, run Maven when the IDE build is idle (or from a copy of the repo).
+
+### Commands
+
+```
+# runtime (fast loop)
+mvn -o -pl protostuff-runtime test -Djavac.target=1.8
+# runtime + json, with coverage
+mvn -pl protostuff-runtime,protostuff-runtime-registry,protostuff-json org.jacoco:jacoco-maven-plugin:0.8.5:prepare-agent verify org.jacoco:jacoco-maven-plugin:0.8.5:report -Djavac.target=1.8 -Dmaven.javadoc.skip=true -Djacoco.includes='io/protostuff/runtime/*'
+# regenerate golden files (ONLY from known-good code)
+mvn -o -pl protostuff-runtime test -Djavac.target=1.8 -Dtest=ArraySchemasGoldenBytesTest -Dprotostuff.golden.regen=true
+```

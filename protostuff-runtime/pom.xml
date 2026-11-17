@@ -9,6 +9,10 @@
   <name>protostuff :: runtime</name>
   <description>protobuf serialization for pre-existing objects</description>
 
+  <properties>
+    <!-- Empty default so that @{argLine} resolves when no agent (e.g. JaCoCo) sets it. -->
+    <argLine></argLine>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -56,6 +60,9 @@
           <forkCount>1.5C</forkCount>
           <!-- execute each test in separate process (workaround) -->
           <reuseForks>false</reuseForks>
+          <!-- JDK 9+ : the runtime reflects on java.util / java.lang internals
+               (EnumSet, Collections wrappers, StackTraceElement). -->
+          <argLine>@{argLine} --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
         </configuration>
       </plugin>
     </plugins>

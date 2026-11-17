@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Test for arrays that contain null elements.
@@ -736,49 +737,49 @@ public abstract class NullArrayElementTest extends AbstractTest
                 if (other.boolArrayList != null)
                     return false;
             }
-            else if (!Arrays.asList(boolArrayList.get(0)).equals(Arrays.asList(other.boolArrayList.get(0))))
+            else if (!deepEqualsAll(boolArrayList, other.boolArrayList))
                 return false;
             if (charArrayList == null)
             {
                 if (other.charArrayList != null)
                     return false;
             }
-            else if (!Arrays.asList(charArrayList.get(0)).equals(Arrays.asList(other.charArrayList.get(0))))
+            else if (!deepEqualsAll(charArrayList, other.charArrayList))
                 return false;
             if (doubleArrayList == null)
             {
                 if (other.doubleArrayList != null)
                     return false;
             }
-            else if (!Arrays.asList(doubleArrayList.get(0)).equals(Arrays.asList(other.doubleArrayList.get(0))))
+            else if (!deepEqualsAll(doubleArrayList, other.doubleArrayList))
                 return false;
             if (floatArrayList == null)
             {
                 if (other.floatArrayList != null)
                     return false;
             }
-            else if (!Arrays.asList(floatArrayList.get(0)).equals(Arrays.asList(other.floatArrayList.get(0))))
+            else if (!deepEqualsAll(floatArrayList, other.floatArrayList))
                 return false;
             if (intArrayList == null)
             {
                 if (other.intArrayList != null)
                     return false;
             }
-            else if (!Arrays.asList(intArrayList.get(0)).equals(Arrays.asList(other.intArrayList.get(0))))
+            else if (!deepEqualsAll(intArrayList, other.intArrayList))
                 return false;
             if (longArrayList == null)
             {
                 if (other.longArrayList != null)
                     return false;
             }
-            else if (!Arrays.asList(longArrayList.get(0)).equals(Arrays.asList(other.longArrayList.get(0))))
+            else if (!deepEqualsAll(longArrayList, other.longArrayList))
                 return false;
             if (shortArrayList == null)
             {
                 if (other.shortArrayList != null)
                     return false;
             }
-            else if (!Arrays.asList(shortArrayList.get(0)).equals(Arrays.asList(other.shortArrayList.get(0))))
+            else if (!deepEqualsAll(shortArrayList, other.shortArrayList))
                 return false;
             return true;
         }
@@ -813,6 +814,14 @@ public abstract class NullArrayElementTest extends AbstractTest
         p.longArrayList.add(new Long[] { 1l, 2l });
         p.floatArrayList.add(new Float[] { 1.1f, 2.2f });
         p.doubleArrayList.add(new Double[] { 1.1d, 2.2d });
+        // second element: equals() must compare every element, not just get(0)
+        p.boolArrayList.add(new Boolean[] { false, null, true });
+        p.charArrayList.add(new Character[] { 'z', null, 'y' });
+        p.shortArrayList.add(new Short[] { -1, null, 3 });
+        p.intArrayList.add(new Integer[] { -1, null, 3 });
+        p.longArrayList.add(new Long[] { -1l, null, 3l });
+        p.floatArrayList.add(new Float[] { -1.5f, null, 3.5f });
+        p.doubleArrayList.add(new Double[] { -1.5d, null, 3.5d });
 
         byte[] data = toByteArray(p, schema);
 
@@ -867,49 +876,49 @@ public abstract class NullArrayElementTest extends AbstractTest
                 if (other.boolArrayList != null)
                     return false;
             }
-            else if (!Arrays.equals(boolArrayList.get(0), other.boolArrayList.get(0)))
+            else if (!deepEqualsAll(boolArrayList, other.boolArrayList))
                 return false;
             if (charArrayList == null)
             {
                 if (other.charArrayList != null)
                     return false;
             }
-            else if (!Arrays.equals(charArrayList.get(0), other.charArrayList.get(0)))
+            else if (!deepEqualsAll(charArrayList, other.charArrayList))
                 return false;
             if (doubleArrayList == null)
             {
                 if (other.doubleArrayList != null)
                     return false;
             }
-            else if (!Arrays.equals(doubleArrayList.get(0), other.doubleArrayList.get(0)))
+            else if (!deepEqualsAll(doubleArrayList, other.doubleArrayList))
                 return false;
             if (floatArrayList == null)
             {
                 if (other.floatArrayList != null)
                     return false;
             }
-            else if (!Arrays.equals(floatArrayList.get(0), other.floatArrayList.get(0)))
+            else if (!deepEqualsAll(floatArrayList, other.floatArrayList))
                 return false;
             if (intArrayList == null)
             {
                 if (other.intArrayList != null)
                     return false;
             }
-            else if (!Arrays.equals(intArrayList.get(0), other.intArrayList.get(0)))
+            else if (!deepEqualsAll(intArrayList, other.intArrayList))
                 return false;
             if (longArrayList == null)
             {
                 if (other.longArrayList != null)
                     return false;
             }
-            else if (!Arrays.equals(longArrayList.get(0), other.longArrayList.get(0)))
+            else if (!deepEqualsAll(longArrayList, other.longArrayList))
                 return false;
             if (shortArrayList == null)
             {
                 if (other.shortArrayList != null)
                     return false;
             }
-            else if (!Arrays.equals(shortArrayList.get(0), other.shortArrayList.get(0)))
+            else if (!deepEqualsAll(shortArrayList, other.shortArrayList))
                 return false;
             return true;
         }
@@ -944,6 +953,14 @@ public abstract class NullArrayElementTest extends AbstractTest
         p.longArrayList.add(new long[] { 1l, 2l });
         p.floatArrayList.add(new float[] { 1.1f, 2.2f });
         p.doubleArrayList.add(new double[] { 1.1d, 2.2d });
+        // second element: equals() must compare every element, not just get(0)
+        p.boolArrayList.add(new boolean[] { false, false, true });
+        p.charArrayList.add(new char[] { 'z', 'y', 'x' });
+        p.shortArrayList.add(new short[] { -1, 0, 3 });
+        p.intArrayList.add(new int[] { -1, 0, 3 });
+        p.longArrayList.add(new long[] { -1l, 0l, 3l });
+        p.floatArrayList.add(new float[] { -1.5f, 0f, 3.5f });
+        p.doubleArrayList.add(new double[] { -1.5d, 0d, 3.5d });
 
         byte[] data = toByteArray(p, schema);
 
@@ -998,49 +1015,49 @@ public abstract class NullArrayElementTest extends AbstractTest
                 if (other.boolHashMap != null)
                     return false;
             }
-            else if (!Arrays.asList(boolHashMap.get(0)).equals(Arrays.asList(other.boolHashMap.get(0))))
+            else if (!deepEqualsAll(boolHashMap, other.boolHashMap))
                 return false;
             if (charHashMap == null)
             {
                 if (other.charHashMap != null)
                     return false;
             }
-            else if (!Arrays.asList(charHashMap.get(0)).equals(Arrays.asList(other.charHashMap.get(0))))
+            else if (!deepEqualsAll(charHashMap, other.charHashMap))
                 return false;
             if (doubleHashMap == null)
             {
                 if (other.doubleHashMap != null)
                     return false;
             }
-            else if (!Arrays.asList(doubleHashMap.get(0)).equals(Arrays.asList(other.doubleHashMap.get(0))))
+            else if (!deepEqualsAll(doubleHashMap, other.doubleHashMap))
                 return false;
             if (floatHashMap == null)
             {
                 if (other.floatHashMap != null)
                     return false;
             }
-            else if (!Arrays.asList(floatHashMap.get(0)).equals(Arrays.asList(other.floatHashMap.get(0))))
+            else if (!deepEqualsAll(floatHashMap, other.floatHashMap))
                 return false;
             if (intHashMap == null)
             {
                 if (other.intHashMap != null)
                     return false;
             }
-            else if (!Arrays.asList(intHashMap.get(0)).equals(Arrays.asList(other.intHashMap.get(0))))
+            else if (!deepEqualsAll(intHashMap, other.intHashMap))
                 return false;
             if (longHashMap == null)
             {
                 if (other.longHashMap != null)
                     return false;
             }
-            else if (!Arrays.asList(longHashMap.get(0)).equals(Arrays.asList(other.longHashMap.get(0))))
+            else if (!deepEqualsAll(longHashMap, other.longHashMap))
                 return false;
             if (shortHashMap == null)
             {
                 if (other.shortHashMap != null)
                     return false;
             }
-            else if (!Arrays.asList(shortHashMap.get(0)).equals(Arrays.asList(other.shortHashMap.get(0))))
+            else if (!deepEqualsAll(shortHashMap, other.shortHashMap))
                 return false;
             return true;
         }
@@ -1075,6 +1092,14 @@ public abstract class NullArrayElementTest extends AbstractTest
         p.longHashMap.put(0, new Long[] { 1l, 2l });
         p.floatHashMap.put(0, new Float[] { 1.1f, 2.2f });
         p.doubleHashMap.put(0, new Double[] { 1.1d, 2.2d });
+        // second entry: equals() must compare every entry, not just key 0
+        p.boolHashMap.put(1, new Boolean[] { false, null, true });
+        p.charHashMap.put(1, new Character[] { 'z', null, 'y' });
+        p.shortHashMap.put(1, new Short[] { -1, null, 3 });
+        p.intHashMap.put(1, new Integer[] { -1, null, 3 });
+        p.longHashMap.put(1, new Long[] { -1l, null, 3l });
+        p.floatHashMap.put(1, new Float[] { -1.5f, null, 3.5f });
+        p.doubleHashMap.put(1, new Double[] { -1.5d, null, 3.5d });
 
         byte[] data = toByteArray(p, schema);
 
@@ -1090,6 +1115,40 @@ public abstract class NullArrayElementTest extends AbstractTest
         roundTrip(p, schema, pipeSchema);
     }
     
+    /**
+     * Compares every element (not just the first) using deep array equality.
+     */
+    static boolean deepEqualsAll(List<?> a, List<?> b)
+    {
+        if (a.size() != b.size())
+            return false;
+
+        for (int i = 0, len = a.size(); i < len; i++)
+        {
+            if (!Arrays.deepEquals(new Object[] { a.get(i) }, new Object[] { b.get(i) }))
+                return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Compares every entry (not just key 0) using deep array equality on the values.
+     */
+    static boolean deepEqualsAll(Map<?, ?> a, Map<?, ?> b)
+    {
+        if (!a.keySet().equals(b.keySet()))
+            return false;
+
+        for (Map.Entry<?, ?> e : a.entrySet())
+        {
+            if (!Arrays.deepEquals(new Object[] { e.getValue() }, new Object[] { b.get(e.getKey()) }))
+                return false;
+        }
+
+        return true;
+    }
+
     static ArrayList<Object> asList(Object array)
     {
         ArrayList<Object> list = new ArrayList<Object>();
@@ -1143,49 +1202,49 @@ public abstract class NullArrayElementTest extends AbstractTest
                 if (other.boolHashMap != null)
                     return false;
             }
-            else if (!asList(boolHashMap.get(0)).equals(asList(other.boolHashMap.get(0))))
+            else if (!deepEqualsAll(boolHashMap, other.boolHashMap))
                 return false;
             if (charHashMap == null)
             {
                 if (other.charHashMap != null)
                     return false;
             }
-            else if (!asList(charHashMap.get(0)).equals(asList(other.charHashMap.get(0))))
+            else if (!deepEqualsAll(charHashMap, other.charHashMap))
                 return false;
             if (doubleHashMap == null)
             {
                 if (other.doubleHashMap != null)
                     return false;
             }
-            else if (!asList(doubleHashMap.get(0)).equals(asList(other.doubleHashMap.get(0))))
+            else if (!deepEqualsAll(doubleHashMap, other.doubleHashMap))
                 return false;
             if (floatHashMap == null)
             {
                 if (other.floatHashMap != null)
                     return false;
             }
-            else if (!asList(floatHashMap.get(0)).equals(asList(other.floatHashMap.get(0))))
+            else if (!deepEqualsAll(floatHashMap, other.floatHashMap))
                 return false;
             if (intHashMap == null)
             {
                 if (other.intHashMap != null)
                     return false;
             }
-            else if (!asList(intHashMap.get(0)).equals(asList(other.intHashMap.get(0))))
+            else if (!deepEqualsAll(intHashMap, other.intHashMap))
                 return false;
             if (longHashMap == null)
             {
                 if (other.longHashMap != null)
                     return false;
             }
-            else if (!asList(longHashMap.get(0)).equals(asList(other.longHashMap.get(0))))
+            else if (!deepEqualsAll(longHashMap, other.longHashMap))
                 return false;
             if (shortHashMap == null)
             {
                 if (other.shortHashMap != null)
                     return false;
             }
-            else if (!asList(shortHashMap.get(0)).equals(asList(other.shortHashMap.get(0))))
+            else if (!deepEqualsAll(shortHashMap, other.shortHashMap))
                 return false;
             return true;
         }
@@ -1220,6 +1279,14 @@ public abstract class NullArrayElementTest extends AbstractTest
         p.longHashMap.put(0, new long[] { 1l, 2l });
         p.floatHashMap.put(0, new float[] { 1.1f, 2.2f });
         p.doubleHashMap.put(0, new double[] { 1.1d, 2.2d });
+        // second entry: equals() must compare every entry, not just key 0
+        p.boolHashMap.put(1, new boolean[] { false, false, true });
+        p.charHashMap.put(1, new char[] { 'z', 'y', 'x' });
+        p.shortHashMap.put(1, new short[] { -1, 0, 3 });
+        p.intHashMap.put(1, new int[] { -1, 0, 3 });
+        p.longHashMap.put(1, new long[] { -1l, 0l, 3l });
+        p.floatHashMap.put(1, new float[] { -1.5f, 0f, 3.5f });
+        p.doubleHashMap.put(1, new double[] { -1.5d, 0d, 3.5d });
 
         byte[] data = toByteArray(p, schema);
 
